@@ -5,10 +5,12 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Reference;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +21,11 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.yxh.wx.cookie.CookiePool;
 
+@Component
 public class Crawler {
 	
 	@Reference
-	CookiePool cookiePool;
+	CookiePool cookiePool = new CookiePool();
 	
 	private Logger logger = LoggerFactory.getLogger(Crawler.class);
 	
@@ -38,6 +41,7 @@ public class Crawler {
 	private int totalPage = 10;
 	private int interval = 10; // 60s
 	
+	@Test
 	public void startCrawler() {
 		String snuid = cookiePool.nuid();
 		logger.info("get SNUID from pool: {} ", snuid);
@@ -53,12 +57,12 @@ public class Crawler {
 	}
 
 	private void returnList(int i) {
-		String keyword = "nodejsss";
+		String keyword = "nodejs";
 		String url = apiRoot + ("/weixin?query=${keyword}&sourceid=inttime_day&type=2&interation=&tsn=1&t=" + new Date().getTime()).replace("${keyword}", keyword);
 		try {
 			logger.info("request url : {}", url);
 			HttpResponse<String> request = Unirest.get(url).headers(mockHeaders).asString();
-			logger.info("retrieved body:{}", request.getBody());
+//			 logger.info("retrieved body:{}", request.getBody());
 			ensureResult(request.getBody());
 			handleResutl(request.getBody());
 		} catch (UnirestException e) {
@@ -77,7 +81,8 @@ public class Crawler {
 		    Element $weixinAccount = e.select(".s-p a#weixin_account").get(0);
 		    String weixinAccountName = $weixinAccount.attr("title");
 		    String weixinAccountLink = $weixinAccount.attr("href");
-		    handleRedirectUrl(link);
+		    logger.info("title={}, link={}, weixinAccountName={}, weixinAccountLink={}", new String[]{title, link, weixinAccountName, weixinAccountLink});
+		    // handleRedirectUrl(link);
 		}
 	}
 	
@@ -86,10 +91,10 @@ public class Crawler {
 		HttpResponse<String> request;
 		try {
 			request = Unirest.get(url).headers(mockHeaders).asString();
+		    logger.info("retrieved body:{}", request.getBody());
 		} catch (UnirestException e) {
 			logger.error("Failed to get page {}", e.getMessage());
 		}
-		logger.info("retrieved body:{}", request.getBody());
 	}
 
 	private String getFirstElementText(Elements elements) {

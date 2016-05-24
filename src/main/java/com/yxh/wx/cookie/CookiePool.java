@@ -7,7 +7,6 @@ import java.util.Random;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,6 @@ public class CookiePool {
 	private int size = 1;
 	Random r =  new Random();
 	
-	@Test
 	public void getBatchCookies() {
 		for (int i=0; i<size; i++) {
 			String result = getNUID();
@@ -58,8 +56,13 @@ public class CookiePool {
 	public String nuid() {
 		int size = cookies.size();
 		if (size == 0) {
-			return null;
+		    getBatchCookies();
+		    size = cookies.size();
+		    if (size == 0) {
+		        return null;
+		    }
 		}
+		
 		return cookies.get(r.nextInt(size));
 	}
 
