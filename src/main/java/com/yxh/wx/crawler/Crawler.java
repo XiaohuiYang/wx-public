@@ -1,10 +1,14 @@
 package com.yxh.wx.crawler;
 
 import java.util.Date;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.felix.scr.annotations.Reference;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +68,37 @@ public class Crawler {
 	}
 
 	private void handleResutl(String body) {
-		
+		Elements els = Jsoup.parse(body).select(".wx-rb .txt-box");
+		ListIterator<Element> iter = els.listIterator();
+		while (iter.hasNext()) {
+			Element e = iter.next();
+			String title = getFirstElementText(e.select("h4 a"));
+		    String link = e.select("h4 a").get(0).attr("href");
+		    Element $weixinAccount = e.select(".s-p a#weixin_account").get(0);
+		    String weixinAccountName = $weixinAccount.attr("title");
+		    String weixinAccountLink = $weixinAccount.attr("href");
+		    handleRedirectUrl(link);
+		}
+	}
+	
+	private void handleRedirectUrl(String url) {
+		logger.info("request url : {}", url);
+		HttpResponse<String> request;
+		try {
+			request = Unirest.get(url).headers(mockHeaders).asString();
+		} catch (UnirestException e) {
+			logger.error("Failed to get page {}", e.getMessage());
+		}
+		logger.info("retrieved body:{}", request.getBody());
 	}
 
+	private String getFirstElementText(Elements elements) {
+		if (elements == null || elements.size() <= 0) {
+			return "";
+		}
+		return elements.get(0).text();
+	}
+	
 	private void ensureResult(String body) {
 		if (body.indexOf("您的访问出错了") >= 0) {
 			throw new RuntimeException("Reached list request limit.");
